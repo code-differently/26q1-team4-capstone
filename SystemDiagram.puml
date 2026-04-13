@@ -1,0 +1,207 @@
+@startuml
+title Workforce Pipeline Intelligence System - Domain Overview
+
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+skinparam packageStyle rectangle
+
+abstract class User {
+  +userId: UUID
+  +name: String
+  +email: String
+}
+
+class JobSeeker {
+  +currentSkills: Skill[*]
+  +targetRoles: Role[*]
+  +viewRecommendedOpportunities()
+}
+
+class TrainingProvider {
+  +organizationName: String
+  +logProgramOffering()
+  +viewAlignmentInsights()
+}
+
+class Employer {
+  +companyName: String
+  +postHiringNeed()
+  +viewTalentPipelineGaps()
+}
+
+User <|-- JobSeeker
+User <|-- TrainingProvider
+User <|-- Employer
+
+class RoleDirectory {
+  +searchRoles()
+  +listInDemandRoles()
+  +getRequiredSkills(roleId)
+}
+
+class Role {
+  +roleId: UUID
+  +title: String
+  +normalizedTitle: String
+  +industry: String
+  +demandScore: Decimal
+}
+
+class Skill {
+  +skillId: UUID
+  +name: String
+  +normalizedName: String
+  +category: String
+}
+
+class PublicLaborMarketDataSource {
+  +sourceName: String
+  +sourceType: String
+  +fetchPublicData()
+}
+
+class JobDemandListing {
+  +listingId: UUID
+  +jobTitleRaw: String
+  +location: String
+  +postedDate: Date
+  +freshnessIndicator: String
+}
+
+class DataNormalizationService {
+  +normalizeJobTitle(rawTitle)
+  +normalizeSkill(rawSkill)
+  +flagAmbiguity()
+}
+
+class DemandAnalysisService {
+  +aggregateDemandByIndustry()
+  +aggregateDemandByRole()
+  +aggregateDemandBySkill()
+}
+
+class ProgramOffering {
+  +programId: UUID
+  +programName: String
+  +skillsTaught: Skill[*]
+  +credentialType: String
+}
+
+class HiringNeed {
+  +hiringNeedId: UUID
+  +openRoles: Integer
+  +targetRole: Role
+  +requiredSkills: Skill[*]
+}
+
+class TalentSupplyProfile {
+  +region: String
+  +availableTalentCount: Integer
+  +topSkills: Skill[*]
+}
+
+class GapAnalysis {
+  +gapId: UUID
+  +region: String
+  +industry: String
+  +roleGapScore: Decimal
+  +skillGapScore: Decimal
+}
+
+class Opportunity {
+  +opportunityId: UUID
+  +type: String
+  +title: String
+  +matchedRole: Role
+}
+
+class AIRecommendationEngine {
+  +recommendTrainingAlignment()
+  +recommendJobSeekerOpportunities()
+  +generateExplainableRationale()
+}
+
+class Recommendation {
+  +recommendationId: UUID
+  +recommendationType: String
+  +targetRole: Role
+  +explanation: String
+  +confidenceScore: Decimal
+}
+
+class ExplainabilityNote {
+  +reasonCode: String
+  +matchedSkills: Skill[*]
+  +missingSkills: Skill[*]
+  +dataBasis: String
+}
+
+class WorkforceDashboard {
+  +visualizeSupplyDemandGaps()
+  +filterByIndustry()
+  +filterByRole()
+  +filterBySkill()
+}
+
+PublicLaborMarketDataSource --> JobDemandListing : provides
+JobDemandListing --> DataNormalizationService : raw titles/skills
+DataNormalizationService --> Role : standardized roles
+DataNormalizationService --> Skill : standardized skills
+
+RoleDirectory o-- Role
+Role --> Skill : requires >
+DemandAnalysisService --> JobDemandListing : analyzes
+DemandAnalysisService --> RoleDirectory : updates demand signals
+DemandAnalysisService --> GapAnalysis : produces
+TalentSupplyProfile --> GapAnalysis : compared against
+
+TrainingProvider --> ProgramOffering : logs
+Employer --> HiringNeed : logs
+ProgramOffering --> Skill : teaches >
+HiringNeed --> Role : targets >
+HiringNeed --> Skill : needs >
+
+ProgramOffering --> TalentSupplyProfile : contributes to
+Employer --> WorkforceDashboard : views
+TrainingProvider --> WorkforceDashboard : views
+JobSeeker --> WorkforceDashboard : explores
+WorkforceDashboard --> GapAnalysis : visualizes
+
+JobSeeker --> AIRecommendationEngine : requests role-specific guidance
+TrainingProvider --> AIRecommendationEngine : requests alignment strategies
+AIRecommendationEngine --> GapAnalysis : uses
+AIRecommendationEngine --> ProgramOffering : evaluates alignment
+AIRecommendationEngine --> HiringNeed : evaluates demand
+AIRecommendationEngine --> Recommendation : creates
+Recommendation --> ExplainabilityNote : includes
+Recommendation --> Opportunity : surfaces
+Opportunity --> Role : aligned to >
+
+note right of PublicLaborMarketDataSource
+Constraint:
+Only public labor market data
+may be ingested.
+end note
+
+note right of JobDemandListing
+Constraint:
+Demand changes rapidly, so
+each listing must expose a
+data freshness indicator.
+end note
+
+note right of AIRecommendationEngine
+Constraint:
+Recommendations must be
+explainable and role-specific,
+not generic career advice.
+end note
+
+note right of DataNormalizationService
+Constraint:
+Must gracefully handle
+non-standard job titles and
+skill vocabularies.
+end note
+
+@enduml
