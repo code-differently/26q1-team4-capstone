@@ -1,3 +1,4 @@
+
 # Logs
 logs
 *.log
@@ -24,3 +25,24 @@ dist-ssr
 *.sw?
 .env
 .env.local
+
+# Maven
+target/
+*.class
+*.jar
+*.war
+
+# IntelliJ
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# Spring Boot
+application-secret*.properties
+application-secret*.yml
+
+# OS
+.DS_Store
+
+

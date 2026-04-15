@@ -1,0 +1,453 @@
+@startuml
+title Workforce Pipeline Intelligence System - Domain Overview
+
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+skinparam packageStyle rectangle
+
+'========================================================
+' USER BASE CLASS
+'========================================================
+
+abstract class User {
+  +userId: UUID
+  ' Unique identifier for every user in the system
+
+  +name: String
+  ' Full name of the user
+
+  +email: String
+  ' Login + communication email address
+}
+
+'========================================================
+' JOB SEEKER ROLE
+'========================================================
+
+class JobSeeker {
+  +currentSkills: List<Skill>
+  ' Skills the user currently possesses (Java, SQL, etc.)
+
+  +targetRoles: List<Role>
+  ' Job roles the user is aiming for (Software Engineer, etc.)
+
+  +viewRecommendedOpportunities()
+  ' Calls AIRecommendationEngine
+  ' INPUT: none (uses logged-in user profile)
+  ' OUTPUT:
+  '   - List of Job recommendations
+  '   - List of TrainingProgram recommendations
+  ' PURPOSE:
+  '   Shows personalized jobs + training suggestions
+}
+
+'========================================================
+' TRAINING PROVIDER ROLE
+'========================================================
+
+class TrainingProvider {
+  +organizationName: String
+  ' Name of institution (bootcamp, college, etc.)
+
+  +logProgramOffering()
+  ' INPUT: TrainingProgram object
+  ' PURPOSE:
+  '   Adds a new training program into the system
+
+  +viewAlignmentInsights()
+  ' INPUT: none
+  ' OUTPUT:
+  '   - Skill gap reports
+  '   - In-demand skills
+  ' PURPOSE:
+  '   Helps training providers adjust curriculum to market demand
+}
+
+'========================================================
+' EMPLOYER ROLE
+'========================================================
+
+class Employer {
+  +companyName: String
+  ' Name of hiring organization
+
+  +postHiringNeed()
+  ' INPUT: HiringNeed (role + required skills)
+  ' PURPOSE:
+  '   Creates demand signal in the system
+
+  +viewTalentPipelineGaps()
+  ' INPUT: none
+  ' OUTPUT:
+  '   - GapAnalysis report
+  ' PURPOSE:
+  '   Shows missing skills in workforce supply vs job demand
+}
+
+User <|-- JobSeeker
+User <|-- TrainingProvider
+User <|-- Employer
+
+'========================================================
+' ROLE DIRECTORY (JOB TAXONOMY SYSTEM)
+'========================================================
+
+class RoleDirectory {
+  +searchRoles()
+  ' INPUT: keyword (String)
+  ' OUTPUT: List<Role>
+  ' PURPOSE: find roles like "Data Analyst"
+
+  +listInDemandRoles()
+  ' INPUT: none
+  ' OUTPUT: List<Role>
+  ' PURPOSE:
+  '   Returns roles ranked by demandScore
+
+  +getRequiredSkills(roleId)
+  ' INPUT: roleId (UUID)
+  ' OUTPUT: List<Skill>
+  ' PURPOSE:
+  '   Returns skills required for a specific role
+}
+
+'========================================================
+' ROLE ENTITY
+'========================================================
+
+class Role {
+  +roleId: UUID
+  ' Unique identifier for role
+
+  +title: String
+  ' Human-readable job title
+
+  +normalizedTitle: String
+  ' Cleaned version for matching (e.g. "SWE" → "Software Engineer")
+
+  +industry: String
+  ' Industry category (Tech, Finance, Healthcare)
+
+  +demandScore: Decimal
+  ' Calculated score based on job posting frequency
+}
+
+'========================================================
+' SKILL ENTITY (CORE UNIT OF SYSTEM)
+'========================================================
+
+class Skill {
+  +skillId: UUID
+  ' Unique skill identifier
+
+  +name: String
+  ' Raw skill name (e.g., "JS")
+
+  +normalizedName: String
+  ' Standardized version (e.g., "JavaScript")
+
+  +category: String
+  ' Grouping (Frontend, Backend, Data, etc.)
+}
+
+'========================================================
+' PUBLIC DATA SOURCE (EXTERNAL INPUT)
+'========================================================
+
+class PublicLaborMarketDataSource {
+  +sourceName: String
+  ' Example: "LinkedIn Jobs API"
+
+  +sourceType: String
+  ' Example: API, CSV dataset, web scraping source
+
+  +fetchPublicData()
+  ' INPUT: none
+  ' OUTPUT: List<JobDemandListing>
+  ' PURPOSE:
+  '   Pull raw job data from public labor market sources
+}
+
+'========================================================
+' RAW JOB LISTING DATA
+'========================================================
+
+class JobDemandListing {
+  +listingId: UUID
+  ' Unique raw listing id
+
+  +jobTitleRaw: String
+  ' Unclean job title (e.g. "Sr. SWE II (JS/TS)")
+
+  +location: String
+  ' Job location
+
+  +postedDate: Date
+  ' When job was posted
+
+  +freshnessIndicator: String
+  ' Shows how recent/valid data is (VERY IMPORTANT constraint)
+}
+
+'========================================================
+' DATA CLEANING LAYER
+'========================================================
+
+class DataNormalizationService {
+  +normalizeJobTitle(rawTitle)
+  ' INPUT: raw job title string
+  ' OUTPUT: standardized Role mapping
+  ' PURPOSE:
+  '   Converts messy titles into clean Roles
+
+  +normalizeSkill(rawSkill)
+  ' INPUT: raw skill string
+  ' OUTPUT: Skill object (standardized)
+  ' PURPOSE:
+  '   Fixes inconsistent naming (JS → JavaScript)
+
+  +flagAmbiguity()
+  ' INPUT: raw data
+  ' OUTPUT: warning/flag
+  ' PURPOSE:
+  '   Detects unclear or conflicting job/skill data
+}
+
+'========================================================
+' DEMAND ANALYSIS ENGINE
+'========================================================
+
+class DemandAnalysisService {
+  +aggregateDemandByIndustry()
+  ' OUTPUT: demand grouped by industry
+
+  +aggregateDemandByRole()
+  ' OUTPUT: role frequency rankings
+
+  +aggregateDemandBySkill()
+  ' OUTPUT: most requested skills across jobs
+}
+
+'========================================================
+' TRAINING PROGRAMS
+'========================================================
+
+class ProgramOffering {
+  +programId: UUID
+  +programName: String
+  +skillsTaught: Skill[*]
+  ' List of skills this program teaches
+
+  +credentialType: String
+  ' Certificate, Bootcamp, Degree, etc.
+}
+
+'========================================================
+' EMPLOYER HIRING NEEDS
+'========================================================
+
+class HiringNeed {
+  +hiringNeedId: UUID
+  +openRoles: Integer
+  ' Number of job openings
+
+  +targetRole: Role
+  ' Role employer is hiring for
+
+  +requiredSkills: List<Skill>
+  ' Skills required for job success
+}
+
+'========================================================
+' WORKFORCE SUPPLY MODEL
+'========================================================
+
+class TalentSupplyProfile {
+  +region: String
+  ' Geographic workforce region
+
+  +availableTalentCount: Integer
+  ' Number of qualified workers
+
+  +topSkills: List<Skill>
+  ' Most common skills in the workforce
+}
+
+'========================================================
+' GAP ANALYSIS (CORE OBJECTIVE)
+'========================================================
+
+class GapAnalysis {
+  +gapId: UUID
+  ' Unique report id
+
+  +region: String
+  +industry: String
+
+  +roleGapScore: Decimal
+  ' Difference between job demand vs supply
+
+  +skillGapScore: Decimal
+  ' Missing skill severity score
+}
+
+'========================================================
+' OPPORTUNITIES (OUTPUT MODEL)
+'========================================================
+
+class Opportunity {
+  +opportunityId: UUID
+  +type: String
+  ' JOB or TRAINING
+
+  +title: String
+  ' Display name
+
+  +matchedRole: Role
+  ' Role this opportunity maps to
+}
+
+'========================================================
+' AI RECOMMENDATION ENGINE (CORE INTELLIGENCE)
+'========================================================
+
+class AIRecommendationEngine {
+  +recommendTrainingAlignment()
+  ' INPUT: employer + training + gap data
+  ' OUTPUT: Training recommendations
+  ' PURPOSE:
+  '   Suggests what programs close workforce gaps
+
+  +recommendJobSeekerOpportunities()
+  ' INPUT: JobSeeker profile
+  ' OUTPUT: Jobs + training matches
+
+  +generateExplainableRationale()
+  ' INPUT: recommendation context
+  ' OUTPUT: human-readable explanation
+  ' PURPOSE:
+  '   REQUIRED: explains WHY recommendation was made
+}
+
+'========================================================
+' FINAL RECOMMENDATION OUTPUT
+'========================================================
+
+class Recommendation {
+  +recommendationId: UUID
+  +recommendationType: String
+  +targetRole: Role
+  +explanation: String
+  ' Natural language explanation for user
+
+  +confidenceScore: Decimal
+  ' AI confidence in match quality
+}
+
+'========================================================
+' EXPLANATION SUPPORT
+'========================================================
+
+class ExplainabilityNote {
+  +reasonCode: String
+  ' Why recommendation was made (skill match, demand spike, etc.)
+
+  +matchedSkills: List<Skill>
+  ' Skills user already has that match job
+
+  +missingSkills: List<Skill>
+  ' Skills user needs to learn
+
+  +dataBasis: String
+  ' What data was used (jobs, programs, demand stats)
+}
+
+'========================================================
+' UI LAYER
+'========================================================
+
+class WorkforceDashboard {
+  +visualizeSupplyDemandGaps()
+  ' Shows charts comparing job demand vs workforce supply
+
+  +filterByIndustry()
+  ' Filters dashboard by industry
+
+  +filterByRole()
+  ' Filters by job role
+
+  +filterBySkill()
+  ' Filters by specific skill
+}
+
+'========================================================
+' RELATIONSHIPS (DATA FLOW)
+'========================================================
+
+PublicLaborMarketDataSource --> JobDemandListing : provides raw job data
+JobDemandListing --> DataNormalizationService : raw titles/skills
+DataNormalizationService --> Role : creates standardized roles
+DataNormalizationService --> Skill : creates standardized skills
+
+RoleDirectory o-- Role
+Role --> Skill : requires >
+
+DemandAnalysisService --> JobDemandListing : analyzes job data
+DemandAnalysisService --> RoleDirectory : updates demand trends
+DemandAnalysisService --> GapAnalysis : produces workforce gaps
+
+TalentSupplyProfile --> GapAnalysis : compared against job demand
+
+TrainingProvider --> ProgramOffering : creates training programs
+Employer --> HiringNeed : creates hiring demand
+
+ProgramOffering --> Skill : teaches skills
+HiringNeed --> Role : targets job roles
+HiringNeed --> Skill : requires skills
+
+ProgramOffering --> TalentSupplyProfile : improves workforce supply
+
+Employer --> WorkforceDashboard : views insights
+TrainingProvider --> WorkforceDashboard : views insights
+JobSeeker --> WorkforceDashboard : explores insights
+WorkforceDashboard --> GapAnalysis : visualizes gaps
+
+JobSeeker --> AIRecommendationEngine : requests job/training matches
+TrainingProvider --> AIRecommendationEngine : requests alignment insights
+
+AIRecommendationEngine --> GapAnalysis : uses data
+AIRecommendationEngine --> ProgramOffering : evaluates training fit
+AIRecommendationEngine --> HiringNeed : evaluates employer demand
+AIRecommendationEngine --> Recommendation : generates output
+
+Recommendation --> ExplainabilityNote : adds reasoning details
+Recommendation --> Opportunity : suggests options
+Opportunity --> Role : maps to career path
+
+'========================================================
+' CONSTRAINTS (PROJECT REQUIREMENTS)
+'========================================================
+
+note right of PublicLaborMarketDataSource
+Only public labor market data
+is allowed in the system.
+end note
+
+note right of JobDemandListing
+Must include freshness indicator
+because job data changes rapidly.
+end note
+
+note right of AIRecommendationEngine
+Recommendations must be:
+- explainable
+- role-specific
+- not generic advice
+end note
+
+note right of DataNormalizationService
+Must handle messy, inconsistent
+job titles and skill data.
+end note
+
+@enduml
