@@ -1,0 +1,373 @@
+@startuml WorkforcePipelineFrontend
+
+!theme plain
+skinparam linetype ortho
+skinparam roundcorner 8
+skinparam classBackgroundColor #F8F8F8
+skinparam classBorderColor #AAAAAA
+skinparam arrowColor #555555
+skinparam classHeaderBackgroundColor #E8EEF4
+skinparam packageBackgroundColor #F0F4F8
+skinparam packageBorderColor #CCCCCC
+
+' ─────────────────────────────────────────
+' CONTEXT
+' ─────────────────────────────────────────
+package "Context" {
+
+  class AuthContext {
+    + user : User
+    + skillProfile : SkillProfile
+    + login(email, password) : Promise
+    + logout() : void
+    + updateSkillProfile(data) : Promise
+    + isAuthenticated : Boolean
+    + isLoading : Boolean
+  }
+
+}
+
+' ─────────────────────────────────────────
+' SERVICES (fetch wrappers)
+' ─────────────────────────────────────────
+package "Services" {
+
+  class authService {
+    + login(email, password) : Promise<User>
+    + register(name, email, password, role) : Promise<User>
+    + logout() : void
+  }
+
+  class jobService {
+    + searchJobs(query, location) : Promise<JobPosting[]>
+    + getJobById(id) : Promise<JobPosting>
+  }
+
+  class recommendationService {
+    + getRecommendation(userId, skillProfileId, jobPostingIds) : Promise<Recommendation>
+    + getRecommendationHistory(userId) : Promise<Recommendation[]>
+  }
+
+  class profileService {
+    + getSkillProfile(userId) : Promise<SkillProfile>
+    + saveSkillProfile(userId, data) : Promise<SkillProfile>
+  }
+
+  class directoryService {
+    + getTrainingOfferings() : Promise<TrainingOffering[]>
+    + saveTrainingOffering(data) : Promise<TrainingOffering>
+    + getEmployerPostings() : Promise<EmployerPosting[]>
+    + saveEmployerPosting(data) : Promise<EmployerPosting>
+    + searchTalent(skillsKeyword) : Promise<SkillProfile[]>
+  }
+
+}
+
+' ─────────────────────────────────────────
+' ROUTER
+' ─────────────────────────────────────────
+package "Router" {
+
+  class AppRouter {
+    + / : LandingPage
+    + /login : LoginPage
+    + /register : RegisterPage
+    + /dashboard : DashboardPage
+    + /search : SearchPage
+    + /profile : ProfilePage
+    + /directory : DirectoryPage
+    + /history : HistoryPage
+  }
+
+  class ProtectedRoute {
+    + requiredRole : Role
+    + redirectsTo : String
+    --
+    + render() : Component | Redirect
+  }
+
+}
+
+' ─────────────────────────────────────────
+' PAGES
+' ─────────────────────────────────────────
+package "Pages" {
+
+  class LandingPage {
+    --
+    + render() : RoleSelector
+  }
+
+  class LoginPage {
+    - email : String
+    - password : String
+    - error : String
+    --
+    + handleSubmit() : void
+    + render() : LoginForm
+  }
+
+  class RegisterPage {
+    - name : String
+    - email : String
+    - password : String
+    - role : Role
+    - error : String
+    --
+    + handleSubmit() : void
+    + render() : RegisterForm
+  }
+
+  class DashboardPage {
+    - user : User [from AuthContext]
+    --
+    + render() : JobSeekerDashboard
+    + render() : TrainingProviderDashboard
+    + render() : EmployerDashboard
+  }
+
+  class SearchPage {
+    - query : String
+    - location : String
+    - results : JobPosting[]
+    - recommendation : Recommendation
+    - isLoading : Boolean
+    --
+    + handleSearch() : void
+    + handleGetRecommendation() : void
+    + render() : SearchBar + ResultsList + AIPanel
+  }
+
+  class ProfilePage {
+    - skillProfile : SkillProfile [from AuthContext]
+    - isEditing : Boolean
+    --
+    + handleSave() : void
+    + render() : ProfileForm
+  }
+
+  class DirectoryPage {
+    - activeTab : String
+    - trainingOfferings : TrainingOffering[]
+    - employerPostings : EmployerPosting[]
+    - talentResults : SkillProfile[]
+    - searchKeyword : String
+    --
+    + handleTabSwitch() : void
+    + handleTalentSearch() : void
+    + render() : DirectoryTabs
+  }
+
+  class HistoryPage {
+    - recommendations : Recommendation[]
+    - isLoading : Boolean
+    --
+    + render() : RecommendationList
+  }
+
+}
+
+' ─────────────────────────────────────────
+' COMPONENTS
+' ─────────────────────────────────────────
+package "Components" {
+
+  class Navbar {
+    - user : User [from AuthContext]
+    --
+    + handleLogout() : void
+    + render() : NavLinks + UserBadge
+  }
+
+  class RoleSelector {
+    + onSelectRole(role) : void
+    --
+    + render() : RoleCard[]
+  }
+
+  class SearchBar {
+    - query : String
+    - location : String
+    + onSearch(query, location) : void
+    --
+    + render() : InputFields + Button
+  }
+
+  class ResultsList {
+    - jobs : JobPosting[]
+    - selectedIds : Long[]
+    + onSelectionChange(ids) : void
+    --
+    + render() : JobCard[]
+  }
+
+  class JobCard {
+    - job : JobPosting
+    - isSelected : Boolean
+    + onToggleSelect(id) : void
+    --
+    + render() : CardUI
+  }
+
+  class AIPanel {
+    - recommendation : Recommendation
+    - isLoading : Boolean
+    + onRequestRecommendation() : void
+    --
+    + render() : AIResponse | LoadingState
+  }
+
+  class ProfileForm {
+    - skills : String
+    - targetRole : String
+    - experienceLevel : ExperienceLevel
+    - isDiscoverable : Boolean
+    + onSave(data) : void
+    --
+    + render() : FormFields
+  }
+
+  class RecommendationCard {
+    - recommendation : Recommendation
+    --
+    + render() : QueryText + AIText + Timestamp
+  }
+
+  class JobSeekerDashboard {
+    - skillProfile : SkillProfile
+    - recentRecommendations : Recommendation[]
+    --
+    + render() : ProfileSummary + RecentActivity
+  }
+
+  class TrainingProviderDashboard {
+    - offerings : TrainingOffering[]
+    --
+    + handleAddOffering() : void
+    + render() : OfferingsList + AddForm
+  }
+
+  class EmployerDashboard {
+    - postings : EmployerPosting[]
+    --
+    + handleAddPosting() : void
+    + render() : PostingsList + AddForm
+  }
+
+}
+
+' ─────────────────────────────────────────
+' DATA SHAPES (mirrors backend DTOs)
+' ─────────────────────────────────────────
+package "Types" {
+
+  class User {
+    + id : Long
+    + name : String
+    + email : String
+    + role : String
+    + createdAt : String
+  }
+
+  class SkillProfile {
+    + id : Long
+    + userId : Long
+    + skills : String
+    + targetRole : String
+    + experienceLevel : String
+    + isDiscoverable : Boolean
+    + updatedAt : String
+  }
+
+  class JobPosting {
+    + id : Long
+    + title : String
+    + company : String
+    + location : String
+    + description : String
+    + requiredSkills : String
+    + salaryRange : String
+    + fetchedAt : String
+  }
+
+  class Recommendation {
+    + id : Long
+    + userId : Long
+    + searchQuery : String
+    + aiResponse : String
+    + jobPostings : JobPosting[]
+    + createdAt : String
+  }
+
+  class TrainingOffering {
+    + id : Long
+    + userId : Long
+    + programName : String
+    + skillsCovered : String
+    + format : String
+    + contactInfo : String
+    + createdAt : String
+  }
+
+  class EmployerPosting {
+    + id : Long
+    + userId : Long
+    + roleTitle : String
+    + skillsNeeded : String
+    + companyName : String
+    + location : String
+    + createdAt : String
+  }
+
+}
+
+' ─────────────────────────────────────────
+' RELATIONSHIPS
+' ─────────────────────────────────────────
+
+AppRouter --> LandingPage
+AppRouter --> LoginPage
+AppRouter --> RegisterPage
+AppRouter --> DashboardPage
+AppRouter --> SearchPage
+AppRouter --> ProfilePage
+AppRouter --> DirectoryPage
+AppRouter --> HistoryPage
+
+ProtectedRoute --> DashboardPage
+ProtectedRoute --> SearchPage
+ProtectedRoute --> ProfilePage
+ProtectedRoute --> DirectoryPage
+ProtectedRoute --> HistoryPage
+
+DashboardPage --> JobSeekerDashboard
+DashboardPage --> TrainingProviderDashboard
+DashboardPage --> EmployerDashboard
+
+SearchPage --> SearchBar
+SearchPage --> ResultsList
+SearchPage --> AIPanel
+ResultsList --> JobCard
+HistoryPage --> RecommendationCard
+ProfilePage --> ProfileForm
+
+AuthContext --> authService
+AuthContext --> profileService
+SearchPage --> jobService
+SearchPage --> recommendationService
+DirectoryPage --> directoryService
+
+Navbar ..> AuthContext : reads
+DashboardPage ..> AuthContext : reads
+SearchPage ..> AuthContext : reads
+ProfilePage ..> AuthContext : reads
+
+authService ..> User : returns
+jobService ..> JobPosting : returns
+recommendationService ..> Recommendation : returns
+profileService ..> SkillProfile : returns
+directoryService ..> TrainingOffering : returns
+directoryService ..> EmployerPosting : returns
+directoryService ..> SkillProfile : returns
+
+@enduml
