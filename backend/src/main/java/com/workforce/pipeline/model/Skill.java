@@ -1,16 +1,47 @@
 package com.workforce.pipeline.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.workforce.pipeline.enums.DemandLevel;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
-public class Skill {
-    @Getter
-    private String name;
-    DemandLevel demandLevel;
+import java.util.ArrayList;
+import java.util.List;
 
-    //setting all skill names to lowercase after trimming blank space
-// on the backend
+@Entity
+@Table(name = "skills")
+public class Skill {
+    @Setter
+    @Getter
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private int id;
+
+    @Getter
+    @Column(nullable = false, unique = true)
+    private String name;
+
+    @Setter
+    @Enumerated(EnumType.STRING)
+    private DemandLevel demandLevel;
+
+    @Setter
+    @Getter
+    @JsonIgnore
+    @ManyToMany(mappedBy = "skillsList")
+    private List<Job> jobs = new ArrayList<>();
+
+    @Setter
+    @Getter
+    @JsonIgnore
+    @ManyToMany(mappedBy = "skillsTaught")
+    private List<TrainingProgram> trainingPrograms = new ArrayList<>();
+
+    public Skill() {
+    }
+
+    // Keep storage normalized so duplicate checks are reliable.
     public void setName(String name) {
         this.name = name.trim().toLowerCase();
     }
@@ -18,11 +49,9 @@ public class Skill {
     public boolean compareSkills(Skill skill) {
         return this.name.equalsIgnoreCase(skill.getName());
     }
-
-    //returns DemandLevel enum based on jobs with that skill in the repository
-    //will edit once repo running
+    // Placeholder until demand is computed through the service/repository layer.
     public static DemandLevel getDemandLevel() {
-        int jobCount=20000; //= JobRepositoryCount.bySkill
+        int jobCount = 20000;
 
         if (jobCount > 5000) {
             return DemandLevel.EXTREMELY_HIGH;
@@ -32,10 +61,8 @@ public class Skill {
             return DemandLevel.MEDIUM;
         } else if (jobCount >= 500) {
             return DemandLevel.LOW;
-        } else  {
+        } else {
             return DemandLevel.MINIMAL;
         }
     }
-
-
 }
