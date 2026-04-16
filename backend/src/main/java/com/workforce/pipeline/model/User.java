@@ -5,7 +5,8 @@ import jakarta.persistence.*;
 
 @Entity // tells Spring this is a database entity
 @Table(name = "users")
-public class User {
+@Inheritance(strategy = InheritanceType.SINGLE_TABLE)
+@DiscriminatorColumn(name = "user_type")public class User {
 
     // ----------------------------
     // PRIMARY KEY (REQUIRED FOR JPA)
