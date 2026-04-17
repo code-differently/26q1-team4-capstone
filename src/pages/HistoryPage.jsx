@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { getHistory } from '../services/recommendationService'
-
+import styles from './HistoryPage.module.css'
 export default function HistoryPage() {
   const { user } = useAuth()
   const [recommendations, setRecommendations] = useState([])
@@ -16,17 +16,29 @@ export default function HistoryPage() {
     load()
   }, [])
 
-  return (
-    <div style={{ color: 'white', padding: '2rem' }}>
-      <h2>My Recommendation History</h2>
-      {isLoading && <p>Loading...</p>}
+ return (
+  <div className={styles.page}>
+    <div className={styles.header}>
+      <h1 className={styles.title}>Recommendation <span style={{ color: '#c472f0' }}>History</span></h1>
+      <p className={styles.subtitle}>Your past AI analyses</p>
+    </div>
+
+    {isLoading && <p className={styles.loading}>● Loading history...</p>}
+
+    {!isLoading && recommendations.length === 0 && (
+      <p className={styles.empty}>No recommendations yet — run a search to get started.</p>
+    )}
+
+    <div className={styles.list}>
       {recommendations.map(rec => (
-        <div key={rec.id} style={{ border: '1px solid #c472f0', padding: '1rem', margin: '0.5rem 0' }}>
-          <p style={{ opacity: 0.5, fontSize: '12px' }}>{rec.createdAt}</p>
-          <p style={{ color: '#00d2ff' }}>Search: {rec.searchQuery}</p>
-          <p style={{ whiteSpace: 'pre-wrap' }}>{rec.aiResponse}</p>
+        <div key={rec.id} className={styles.card}>
+          <p className={styles.cardDate}>{rec.createdAt}</p>
+          <p className={styles.cardQuery}>Search: {rec.searchQuery}</p>
+          <p className={styles.aiLabel}>✦ Nodus AI Analysis</p>
+          <p className={styles.cardResponse}>{rec.aiResponse}</p>
         </div>
       ))}
     </div>
-  )
+  </div>
+)
 }

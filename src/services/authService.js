@@ -13,9 +13,8 @@ export const login = async (email, password) => {
   // real fetch goes here later
 }
 
-export const register = async (name,email, password,role) => {
-  if (USE_MOCK) return MOCK_USER
-  // real fetch goes here later
+export const register = async (name, email, password, role) => {
+  if (USE_MOCK) return { ...MOCK_USER, name, email, role }
 }
 
 export const logout = async () => {
