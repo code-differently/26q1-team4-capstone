@@ -2,6 +2,7 @@ package com.workforce.pipeline.service;
 
 import com.workforce.pipeline.model.Skill;
 import com.workforce.pipeline.model.User;
+import com.workforce.pipeline.repository.SkillRepository;
 import com.workforce.pipeline.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -14,6 +15,9 @@ public class UserService {
     // Repository used to interact with database
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private SkillRepository skillRepository;
 
     // ----------------------------
     // CREATE USER
@@ -44,7 +48,7 @@ public class UserService {
     // Returns list of skills for a given user
     // Used for Job Seeker profile + gap analysis logic
     // ----------------------------
-    public List<?> getUserSkills(Integer id) {
+    public List<Skill> getUserSkills(Integer id) {
         User user = userRepository.findById(id).orElse(null);
         if (user == null) return null;
 
@@ -55,11 +59,15 @@ public class UserService {
     // ADD SKILL TO USER
     // Adds a skill and saves updated user
     // ----------------------------
-    public User addSkillToUser(Integer id, Skill skill) {
+    public User addSkillToUser(Integer id, Skill skillRequest) {
         User user = userRepository.findById(id).orElse(null);
         if (user == null) return null;
 
+        Skill skill = skillRepository.findByNameIgnoreCase(skillRequest.getName())
+                .orElseGet(() -> skillRepository.save(skillRequest));
+
         user.addSkill(skill);
+
         return userRepository.save(user);
     }
 }

@@ -55,7 +55,7 @@ public class UserController {
     // - recommendation system
     // ----------------------------
     @GetMapping("/{id}/skills")
-    public List<?> getUserSkills(@PathVariable Integer id) {
+    public List<Skill> getUserSkills(@PathVariable Integer id) {
         return userService.getUserSkills(id);
     }
 

@@ -2,53 +2,60 @@ package com.workforce.pipeline.controller;
 
 import com.workforce.pipeline.model.Skill;
 import com.workforce.pipeline.service.SkillService;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/skills")
 public class SkillController {
-    private final SkillService skillService;
 
-    public SkillController(SkillService skillService) {
-        this.skillService = skillService;
-    }
+    @Autowired
+    private SkillService skillService;
 
+    // ----------------------------------------
+    // CREATE SKILL
+    // POST /skills
+    // ----------------------------------------
     @PostMapping
     public Skill createSkill(@RequestBody Skill skill) {
-        return skillService.createSkill(skill);
+        return skillService.saveSkill(skill);
     }
 
+    // ----------------------------------------
+    // GET ALL SKILLS
+    // GET /skills
+    // ----------------------------------------
     @GetMapping
     public List<Skill> getAllSkills() {
         return skillService.getAllSkills();
     }
 
+    // ----------------------------------------
+    // GET SKILL BY ID
+    // GET /skills/{id}
+    // ----------------------------------------
     @GetMapping("/{id}")
-    public Skill getSkillById(@PathVariable Integer id) {
+    public Skill getSkillById(@PathVariable int id) {
         return skillService.getSkillById(id);
     }
 
-    @GetMapping("/search")
-    public Skill getSkillByName(@RequestParam String name) {
-        return skillService.getSkillByName(name);
-    }
-
+    // ----------------------------------------
+    // UPDATE SKILL
+    // PUT /skills/{id}
+    // ----------------------------------------
     @PutMapping("/{id}")
-    public Skill updateSkill(@PathVariable Integer id, @RequestBody Skill skill) {
-        return skillService.updateSkill(id, skill);
+    public Skill updateSkill(@PathVariable int id, @RequestBody Skill updatedSkill) {
+        return skillService.updateSkill(id, updatedSkill);
     }
 
-    @PutMapping("/{id}/refresh-demand")
-    public Skill refreshDemandLevel(@PathVariable Integer id) {
-        return skillService.refreshDemandLevel(id);
+    // ----------------------------------------
+    // DELETE SKILL
+    // DELETE /skills/{id}
+    // ----------------------------------------
+    @DeleteMapping("/{id}")
+    public void deleteSkill(@PathVariable int id) {
+        skillService.deleteSkill(id);
     }
 }
