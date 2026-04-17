@@ -20,7 +20,9 @@ export default function Navbar() {
           <Link to="/search" className={styles.link}>Search</Link>
           <Link to="/directory" className={styles.link}>Directory</Link>
           <Link to="/history" className={styles.link}>History</Link>
-          <Link to="/profile" className={styles.link}>Profile</Link>
+          {user.role === 'JOB_SEEKER' && (
+  <Link to="/profile" className={styles.link}>Profile</Link>
+)}
           <span className={styles.userBadge}>{user.name}</span>
           <button className={styles.logoutBtn} onClick={handleLogout}>Logout</button>
         </div>
