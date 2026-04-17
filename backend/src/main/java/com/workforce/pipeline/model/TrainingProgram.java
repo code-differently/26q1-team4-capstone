@@ -47,4 +47,12 @@ public class TrainingProgram {
     public List<Skill> getSkillsTaught() {
         return new ArrayList<>(skillsTaught);
     }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
 }

@@ -12,6 +12,7 @@ import java.util.List;
 @Service
 @Transactional
 public class RoleService {
+
     private final RoleRepository roleRepository;
     private final JobRepository jobRepository;
 
@@ -21,19 +22,7 @@ public class RoleService {
     }
 
     public Role createRole(Role role) {
-        if (role.getRegion() == null || role.getRegion().isBlank()) {
-            throw new IllegalArgumentException("Role region is required.");
-        }
-        if (role.getIndustry() == null || role.getIndustry().isBlank()) {
-            throw new IllegalArgumentException("Role industry is required.");
-        }
-
-        roleRepository.findByRegionIgnoreCaseAndIndustryIgnoreCase(role.getRegion(), role.getIndustry())
-                .ifPresent(existingRole -> {
-                    throw new IllegalArgumentException("Role already exists for this region and industry.");
-                });
-
-        role.setDemandScore(calculateDemandScore(role));
+        role.setDemandScore(0.0);
         return roleRepository.save(role);
     }
 
@@ -54,38 +43,38 @@ public class RoleService {
     }
 
     public Role updateRole(Integer id, Role updatedRole) {
-        Role existingRole = roleRepository.findById(id).orElse(null);
-        if (existingRole == null) {
-            return null;
+
+        Role existing = roleRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Role not found"));
+
+        if (updatedRole.getRegion() != null) {
+            existing.setRegion(updatedRole.getRegion());
         }
 
-        if (updatedRole.getRegion() != null && !updatedRole.getRegion().isBlank()) {
-            existingRole.setRegion(updatedRole.getRegion());
-        }
-        if (updatedRole.getIndustry() != null && !updatedRole.getIndustry().isBlank()) {
-            existingRole.setIndustry(updatedRole.getIndustry());
+        if (updatedRole.getIndustry() != null) {
+            existing.setIndustry(updatedRole.getIndustry());
         }
 
-        existingRole.setDemandScore(calculateDemandScore(existingRole));
-        return roleRepository.save(existingRole);
+        return roleRepository.save(existing);
     }
 
     public boolean deleteRole(Integer id) {
         if (!roleRepository.existsById(id)) {
             return false;
         }
-
         roleRepository.deleteById(id);
         return true;
     }
 
+    @Transactional
     public Role refreshDemandScore(Integer roleId) {
-        Role role = roleRepository.findById(roleId).orElse(null);
-        if (role == null) {
-            return null;
-        }
+        Role role = roleRepository.findById(roleId)
+                .orElseThrow(() -> new RuntimeException("Role not found"));
 
-        role.setDemandScore(calculateDemandScore(role));
+        double score = jobRepository.countByRole_Id(roleId);
+
+        role.setDemandScore(score);
+
         return roleRepository.save(role);
     }
 
@@ -94,7 +83,6 @@ public class RoleService {
             return 0.0;
         }
 
-        List<Job> matchingJobs = jobRepository.findByRole_Id(role.getId());
-        return matchingJobs.size();
+        return jobRepository.findByRole_Id(role.getId()).size();
     }
 }

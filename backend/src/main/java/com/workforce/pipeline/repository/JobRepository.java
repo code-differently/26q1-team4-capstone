@@ -13,4 +13,6 @@ public interface JobRepository extends JpaRepository<Job, Integer> {
     List<Job> findBySkillsList_NameIgnoreCase(String skillName);
 
     List<Job> findByRole_Id(Integer roleId);
+
+    long countByRole_Id(Integer roleId);
 }

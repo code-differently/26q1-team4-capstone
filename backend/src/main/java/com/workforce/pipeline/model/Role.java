@@ -21,7 +21,7 @@ public class Role {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
-
+    private String title;     // ADD THIS
     private String region;
     private String industry;
     private double demandScore;
@@ -32,5 +32,6 @@ public class Role {
 
     public Role() {
     }
+
 
 }

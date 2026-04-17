@@ -1,29 +1,19 @@
 package com.workforce.pipeline.model;
+
 public class GapAnalysis {
 
-    private int id;
     private String region;
     private String industry;
     private double roleGapScore;
     private double skillGapScore;
+
+    public GapAnalysis() {}
 
     public GapAnalysis(String region, String industry, double roleGapScore, double skillGapScore) {
         this.region = region;
         this.industry = industry;
         this.roleGapScore = roleGapScore;
         this.skillGapScore = skillGapScore;
-    }
-
-    // ----------------------------
-    // GETTERS / SETTERS
-    // ----------------------------
-
-    public int getId() {
-        return id;
-    }
-
-    public void setId(int id) {
-        this.id = id;
     }
 
     public String getRegion() {

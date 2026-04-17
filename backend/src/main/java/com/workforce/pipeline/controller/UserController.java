@@ -3,7 +3,6 @@ package com.workforce.pipeline.controller;
 import com.workforce.pipeline.model.Skill;
 import com.workforce.pipeline.model.User;
 import com.workforce.pipeline.service.UserService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -12,60 +11,57 @@ import java.util.List;
 @RequestMapping("/users")
 public class UserController {
 
-    // Service layer handles business logic
-    @Autowired
-    private UserService userService;
+    private final UserService userService;
 
-    // ----------------------------
-    // CREATE USER ENDPOINT
-    // POST /users
-    // Creates a new user in system
-    // ----------------------------
+    public UserController(UserService userService) {
+        this.userService = userService;
+    }
+
+    // CREATE
     @PostMapping
     public User createUser(@RequestBody User user) {
         return userService.createUser(user);
     }
 
-    // ----------------------------
-    // GET ALL USERS
-    // GET /users
-    // Returns list of all users
-    // ----------------------------
+    // READ ALL
     @GetMapping
     public List<User> getAllUsers() {
         return userService.getAllUsers();
     }
 
-    // ----------------------------
-    // GET USER BY ID
-    // GET /users/{id}
-    // Fetch single user
-    // ----------------------------
+    // READ ONE
     @GetMapping("/{id}")
     public User getUserById(@PathVariable Integer id) {
         return userService.getUserById(id);
     }
 
-    // ----------------------------
-    // GET USER SKILLS
-    // GET /users/{id}/skills
-    // Used for:
-    // - Job seeker profile
-    // - gap analysis
-    // - recommendation system
-    // ----------------------------
+    // UPDATE
+    @PutMapping("/{id}")
+    public User updateUser(@PathVariable Integer id, @RequestBody User user) {
+        return userService.updateUser(id, user);
+    }
+
+    // DELETE
+    @DeleteMapping("/{id}")
+    public void deleteUser(@PathVariable Integer id) {
+        userService.deleteUser(id);
+    }
+
+    // GET SKILLS
     @GetMapping("/{id}/skills")
     public List<Skill> getUserSkills(@PathVariable Integer id) {
         return userService.getUserSkills(id);
     }
 
-    // ----------------------------
-    // ADD SKILL TO USER
-    // POST /users/{id}/skills
-    // Adds skill to a specific user
-    // ----------------------------
+    // ADD SKILL (STANDARDIZED)
     @PostMapping("/{id}/skills")
     public User addSkillToUser(@PathVariable Integer id, @RequestBody Skill skill) {
-        return userService.addSkillToUser(id, skill);
+        return userService.addSkillToUser(id, skill.getId());
+    }
+
+    // REMOVE SKILL
+    @DeleteMapping("/{id}/skills/{skillId}")
+    public User removeSkillFromUser(@PathVariable Integer id, @PathVariable Integer skillId) {
+        return userService.removeSkillFromUser(id, skillId);
     }
 }
