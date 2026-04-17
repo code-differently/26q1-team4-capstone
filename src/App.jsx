@@ -4,6 +4,7 @@ import ProtectedRoute from './router/ProtectedRoute'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
 import DashboardPage from './pages/DashboardPage'
+import SearchPage from './pages/SearchPage'
 
 const Placeholder = ({ name }) => (
   <div style={{ color: 'white', padding: '2rem' }}>{name} page</div>
@@ -20,7 +21,7 @@ function App() {
         
         <Route element={<ProtectedRoute />}>
           <Route path="/dashboard" element={<DashboardPage />} />
-          <Route path="/search" element={<Placeholder name="Search" />} />
+          <Route path="/search" element={<SearchPage/>} />
           <Route path="/profile" element={<Placeholder name="Profile" />} />
           <Route path="/directory" element={<Placeholder name="Directory" />} />
           <Route path="/history" element={<Placeholder name="History" />} />
