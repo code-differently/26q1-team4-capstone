@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { getTrainingOfferings, getEmployerPostings, searchTalent } from '../services/directoryService'
-
+import styles from './DirectoryPage.module.css'
 export default function DirectoryPage() {
   const { user } = useAuth()
   const [activeTab, setActiveTab] = useState('training')
@@ -25,66 +25,83 @@ export default function DirectoryPage() {
     setTalentResults(results)
   }
 
-  return (
-    <div style={{ color: 'white', padding: '2rem' }}>
-      <h2>Directory</h2>
-      <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
-        <button onClick={() => setActiveTab('training')}
-          style={{ color: activeTab === 'training' ? '#00d2ff' : 'white' }}>
-          Training Programs
+ return (
+  <div className={styles.page}>
+    <div className={styles.header}>
+      <h1 className={styles.title}>Network <span style={{ color: '#00d2ff' }}>Directory</span></h1>
+      <p className={styles.subtitle}>Training programs, employers, and talent</p>
+    </div>
+
+    <div className={styles.tabs}>
+      <button
+        className={`${styles.tab} ${activeTab === 'training' ? styles.tabActive : ''}`}
+        onClick={() => setActiveTab('training')}
+      >
+        Training Programs
+      </button>
+      <button
+        className={`${styles.tab} ${activeTab === 'employers' ? styles.tabActive : ''}`}
+        onClick={() => setActiveTab('employers')}
+      >
+        Employers
+      </button>
+      {user.role === 'EMPLOYER' && (
+        <button
+          className={`${styles.tab} ${activeTab === 'talent' ? styles.tabActive : ''}`}
+          onClick={() => setActiveTab('talent')}
+        >
+          Find Talent
         </button>
-        <button onClick={() => setActiveTab('employers')}
-          style={{ color: activeTab === 'employers' ? '#00d2ff' : 'white' }}>
-          Employers
-        </button>
-        {user.role === 'EMPLOYER' && (
-          <button onClick={() => setActiveTab('talent')}
-            style={{ color: activeTab === 'talent' ? '#00d2ff' : 'white' }}>
-            Find Talent
-          </button>
-        )}
+      )}
+    </div>
+
+    {activeTab === 'training' && (
+      <div className={styles.grid}>
+        {trainingOfferings.map(o => (
+          <div key={o.id} className={styles.card}>
+            <p className={styles.cardTitle}>{o.programName}</p>
+            <p className={styles.cardSkills}>{o.skillsCovered}</p>
+            <p className={styles.cardMeta}>{o.format} — {o.contactInfo}</p>
+          </div>
+        ))}
       </div>
+    )}
 
-      {activeTab === 'training' && (
-        <div>
-          {trainingOfferings.map(o => (
-            <div key={o.id} style={{ border: '1px solid #0a3a5a', padding: '1rem', margin: '0.5rem 0' }}>
-              <h3>{o.programName}</h3>
-              <p>{o.skillsCovered}</p>
-              <p>{o.format} — {o.contactInfo}</p>
-            </div>
-          ))}
-        </div>
-      )}
+    {activeTab === 'employers' && (
+      <div className={styles.grid}>
+        {employerPostings.map(p => (
+          <div key={p.id} className={styles.card}>
+            <p className={styles.cardTitle}>{p.roleTitle}</p>
+            <p className={styles.cardMeta}>{p.companyName} — {p.location}</p>
+            <p className={styles.cardSkills}>{p.skillsNeeded}</p>
+          </div>
+        ))}
+      </div>
+    )}
 
-      {activeTab === 'employers' && (
-        <div>
-          {employerPostings.map(p => (
-            <div key={p.id} style={{ border: '1px solid #0a3a5a', padding: '1rem', margin: '0.5rem 0' }}>
-              <h3>{p.roleTitle}</h3>
-              <p>{p.companyName} — {p.location}</p>
-              <p>{p.skillsNeeded}</p>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {activeTab === 'talent' && (
-        <div>
+    {activeTab === 'talent' && (
+      <div>
+        <div className={styles.searchBar}>
           <input
+            className={styles.input}
             placeholder="Search by skill..."
             value={keyword}
             onChange={(e) => setKeyword(e.target.value)}
           />
-          <button onClick={handleTalentSearch}>Search</button>
+          <button className={styles.searchBtn} onClick={handleTalentSearch}>
+            Search →
+          </button>
+        </div>
+        <div className={styles.grid}>
           {talentResults.map(t => (
-            <div key={t.id} style={{ border: '1px solid #0a3a5a', padding: '1rem', margin: '0.5rem 0' }}>
-              <p>{t.skills}</p>
-              <p>{t.targetRole} — {t.experienceLevel}</p>
+            <div key={t.id} className={styles.talentCard}>
+              <p className={styles.talentSkills}>{t.skills}</p>
+              <p className={styles.talentMeta}>{t.targetRole} — {t.experienceLevel}</p>
             </div>
           ))}
         </div>
-      )}
-    </div>
-  )
+      </div>
+    )}
+  </div>
+)
 }

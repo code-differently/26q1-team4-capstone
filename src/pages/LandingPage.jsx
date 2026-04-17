@@ -261,8 +261,17 @@ export default function LandingPage() {
       })
 
       setNodePositions(nodesRef.current.map(n => ({
-        id: n.id, x: n.x, y: n.y, r: n.r, isYou: n.isYou, role: n.role
-      })))
+  id: n.id,
+  x: n.x,
+  y: n.y,
+  r: n.r,
+  isYou: n.isYou,
+  role: n.role,
+  company: n.company,
+  location: n.location,
+  skills: n.skills,
+  openings: n.openings,
+})))
 
       animRef.current = requestAnimationFrame(draw)
     }
@@ -340,7 +349,10 @@ export default function LandingPage() {
           zIndex: 10,
           backdropFilter: 'blur(12px)',
         }}>
-          <p style={{ color: '#00d2ff', fontWeight: 600, fontSize: 14, fontFamily: 'Syne, sans-serif', margin: '0 0 4px' }}>{expandedNode.role}</p>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+  <p style={{ color: '#00d2ff', fontWeight: 600, fontSize: 14, fontFamily: 'Syne, sans-serif', margin: 0 }}>{expandedNode.role}</p>
+  <button onClick={() => setExpandedNode(null)} style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.4)', fontSize: 16, cursor: 'pointer', padding: '0 0 0 8px', lineHeight: 1 }}>✕</button>
+</div>
           <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: 12, margin: '0 0 4px', fontFamily: 'Space Grotesk, sans-serif' }}>{expandedNode.company} · {expandedNode.location}</p>
           <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11, margin: '0 0 8px', fontFamily: 'Space Grotesk, sans-serif' }}>{expandedNode.skills}</p>
           <p style={{ color: '#00ffcc', fontSize: 11, margin: '0 0 12px', fontFamily: 'Space Grotesk, sans-serif' }}>● {expandedNode.openings} openings</p>

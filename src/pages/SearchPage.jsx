@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { searchJobs } from '../services/jobService'
 import { getRecommendation } from '../services/recommendationService'
-
+import styles from './SearchPage.module.css'
 export default function SearchPage() {
   const { user, skillProfile } = useAuth()
   const [query, setQuery] = useState('')
@@ -33,48 +33,63 @@ export default function SearchPage() {
   }
 
   return (
-    <div style={{ color: 'white', padding: '2rem' }}>
-      <div>
-        <input
-          placeholder="Job title or skill"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-        />
-        <input
-          placeholder="Location"
-          value={location}
-          onChange={(e) => setLocation(e.target.value)}
-        />
-        <button onClick={handleSearch}>Search</button>
-      </div>
-
-      {isLoading && <p>Loading...</p>}
-
-      <div>
-        {results.map(job => (
-          <div key={job.id} onClick={() => handleToggleSelect(job.id)}
-            style={{ border: selectedIds.includes(job.id) ? '1px solid #00d2ff' : '1px solid #333',
-              padding: '1rem', margin: '0.5rem 0', cursor: 'pointer' }}>
-            <h3>{job.title}</h3>
-            <p>{job.company} — {job.location}</p>
-            <p>{job.requiredSkills}</p>
-            <p style={{ fontSize: '11px', opacity: 0.5 }}>Fetched: {job.fetchedAt}</p>
-          </div>
-        ))}
-      </div>
-
-      {selectedIds.length > 0 && (
-        <button onClick={handleGetRecommendation}>
-          Get AI Recommendation ({selectedIds.length} jobs selected)
-        </button>
-      )}
-
-      {recommendation && (
-        <div style={{ border: '1px solid #c472f0', padding: '1rem', marginTop: '1rem' }}>
-          <h3>Nodus AI Analysis</h3>
-          <p style={{ whiteSpace: 'pre-wrap' }}>{recommendation.aiResponse}</p>
-        </div>
-      )}
+  <div className={styles.page}>
+    <div className={styles.header}>
+      <h1 className={styles.title}>Intelligence <span style={{ color: '#00d2ff' }}>Search</span></h1>
+      <p className={styles.subtitle}>Find roles — get AI-powered gap analysis</p>
     </div>
-  )
+
+    <div className={styles.searchBar}>
+      <input
+        className={styles.input}
+        placeholder="Job title, skill, or keyword"
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+      />
+      <input
+        className={styles.input}
+        placeholder="Location"
+        value={location}
+        onChange={(e) => setLocation(e.target.value)}
+        style={{ maxWidth: '200px' }}
+      />
+      <button className={styles.searchBtn} onClick={handleSearch}>
+        Search →
+      </button>
+    </div>
+
+    {isLoading && <p className={styles.loading}>● Scanning network...</p>}
+
+    <div className={styles.results}>
+      {results.map(job => (
+        <div
+          key={job.id}
+          className={`${styles.jobCard} ${selectedIds.includes(job.id) ? styles.jobCardSelected : ''}`}
+          onClick={() => handleToggleSelect(job.id)}
+        >
+          <h3 className={styles.jobTitle}>
+            {selectedIds.includes(job.id) && <span className={styles.selectedIndicator} />}
+            {job.title}
+          </h3>
+          <p className={styles.jobMeta}>{job.company} — {job.location}</p>
+          <p className={styles.jobSkills}>{job.requiredSkills}</p>
+          <p className={styles.jobFreshness}>Fetched: {job.fetchedAt}</p>
+        </div>
+      ))}
+    </div>
+
+    {selectedIds.length > 0 && (
+      <button className={styles.recommendBtn} onClick={handleGetRecommendation}>
+        ✦ Get AI Recommendation — {selectedIds.length} {selectedIds.length === 1 ? 'role' : 'roles'} selected
+      </button>
+    )}
+
+    {recommendation && (
+      <div className={styles.aiPanel}>
+        <p className={styles.aiHeader}>✦ Nodus AI Analysis</p>
+        <p className={styles.aiResponse}>{recommendation.aiResponse}</p>
+      </div>
+    )}
+  </div>
+)
 }
