@@ -41,7 +41,7 @@ public class User {
     //
     // This is mainly used when role = JOB_SEEKER
     // ----------------------------
-    @ManyToMany
+    @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
             name = "user_skills",
             joinColumns = @JoinColumn(name = "user_id"),

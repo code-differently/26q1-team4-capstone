@@ -7,6 +7,7 @@ import com.workforce.pipeline.repository.TrainingRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class TrainingService {
@@ -14,28 +15,38 @@ public class TrainingService {
     private final TrainingRepository trainingRepository;
     private final SkillRepository skillRepository;
 
-    public TrainingService(TrainingRepository trainingRepository, SkillRepository skillRepository) {
+    public TrainingService(TrainingRepository trainingRepository,
+                           SkillRepository skillRepository) {
         this.trainingRepository = trainingRepository;
         this.skillRepository = skillRepository;
     }
 
-    // CREATE
+    // ----------------------------------------
+    // CREATE TRAINING PROGRAM
+    // ----------------------------------------
     public TrainingProgram createTrainingProgram(TrainingProgram program) {
         return trainingRepository.save(program);
     }
 
-    // READ ALL
+    // ----------------------------------------
+    // GET ALL PROGRAMS
+    // ----------------------------------------
     public List<TrainingProgram> getAllPrograms() {
         return trainingRepository.findAll();
     }
 
-    // READ ONE
+    // ----------------------------------------
+    // GET PROGRAM BY ID
+    // ----------------------------------------
     public TrainingProgram getById(int id) {
         return trainingRepository.findById(id).orElse(null);
     }
 
-    // UPDATE (FIX ERROR)
+    // ----------------------------------------
+    // UPDATE PROGRAM
+    // ----------------------------------------
     public TrainingProgram updateProgram(int id, TrainingProgram updated) {
+
         TrainingProgram existing = trainingRepository.findById(id).orElse(null);
         if (existing == null) return null;
 
@@ -45,28 +56,47 @@ public class TrainingService {
         return trainingRepository.save(existing);
     }
 
-    // DELETE (FIX ERROR)
+    // ----------------------------------------
+    // DELETE PROGRAM
+    // ----------------------------------------
     public void deleteProgram(int id) {
         trainingRepository.deleteById(id);
     }
 
-    // ADD SKILL
+    // ----------------------------------------
+    // ADD SKILL TO PROGRAM
+    // FIX: prevent duplicates + safe null handling
+    // ----------------------------------------
     public TrainingProgram addSkillToProgram(int programId, int skillId) {
+
         TrainingProgram program = trainingRepository.findById(programId).orElse(null);
         Skill skill = skillRepository.findById(skillId).orElse(null);
 
         if (program == null || skill == null) return null;
 
-        program.getSkills().add(skill);
+        // prevent duplicate skill inserts (important for Postgres join table)
+        boolean alreadyExists = program.getSkills()
+                .stream()
+                .anyMatch(s -> s.getId().equals(skillId));
+
+        if (!alreadyExists) {
+            program.getSkills().add(skill);
+        }
+
         return trainingRepository.save(program);
     }
 
-    // REMOVE SKILL (FIX ERROR)
+    // ----------------------------------------
+    // REMOVE SKILL FROM PROGRAM
+    // FIX: use equals() not == (VERY IMPORTANT for Postgres IDs)
+    // ----------------------------------------
     public TrainingProgram removeSkillFromProgram(int programId, int skillId) {
+
         TrainingProgram program = trainingRepository.findById(programId).orElse(null);
         if (program == null) return null;
 
-        program.getSkills().removeIf(skill -> skill.getId() == skillId);
+        program.getSkills().removeIf(skill -> skill.getId().equals(skillId));
+
         return trainingRepository.save(program);
     }
 }

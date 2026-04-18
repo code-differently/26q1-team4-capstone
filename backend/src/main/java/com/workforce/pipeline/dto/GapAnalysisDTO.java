@@ -1,15 +1,29 @@
 package com.workforce.pipeline.dto;
 
+/**
+ * GapAnalysisDTO
+ *
+ * Represents workforce gap metrics for a given region and industry.
+ * Used for analytics responses (NOT stored in database).
+ */
 public class GapAnalysisDTO {
 
+    // Geographic region (e.g., "Delaware", "NYC", etc.)
     private String region;
+
+    // Industry sector (e.g., "Healthcare", "Tech")
     private String industry;
+
+    // Measures mismatch between job demand and available roles
     private double roleGapScore;
+
+    // Measures mismatch between required skills and available skills
     private double skillGapScore;
 
     public GapAnalysisDTO() {}
 
-    public GapAnalysisDTO(String region, String industry, double roleGapScore, double skillGapScore) {
+    public GapAnalysisDTO(String region, String industry,
+                          double roleGapScore, double skillGapScore) {
         this.region = region;
         this.industry = industry;
         this.roleGapScore = roleGapScore;

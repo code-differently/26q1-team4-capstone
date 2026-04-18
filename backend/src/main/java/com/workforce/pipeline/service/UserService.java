@@ -1,5 +1,8 @@
 package com.workforce.pipeline.service;
 
+import com.workforce.pipeline.dto.UserDTO;
+import com.workforce.pipeline.enums.UserRole;
+import com.workforce.pipeline.mapper.UserMapper;
 import com.workforce.pipeline.model.Skill;
 import com.workforce.pipeline.model.User;
 import com.workforce.pipeline.repository.SkillRepository;
@@ -7,6 +10,7 @@ import com.workforce.pipeline.repository.UserRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class UserService {
@@ -20,63 +24,74 @@ public class UserService {
     }
 
     // CREATE
-    public User createUser(User user) {
-        return userRepository.save(user);
+    public UserDTO createUser(UserDTO dto) {
+        User user = UserMapper.toEntity(dto);
+        return UserMapper.toDTO(userRepository.save(user));
     }
 
     // READ ALL
-    public List<User> getAllUsers() {
-        return userRepository.findAll();
+    public List<UserDTO> getAllUsers() {
+        return userRepository.findAll()
+                .stream()
+                .map(UserMapper::toDTO)
+                .toList();
     }
 
     // READ ONE
-    public User getUserById(Integer id) {
-        return userRepository.findById(id).orElse(null);
+    public UserDTO getUserById(Integer id) {
+        return userRepository.findById(id)
+                .map(UserMapper::toDTO)
+                .orElse(null);
     }
 
-    // UPDATE (FIX FOR YOUR ERROR)
-    public User updateUser(Integer id, User updatedUser) {
+    // UPDATE
+    public UserDTO updateUser(Integer id, UserDTO dto) {
+
         User user = userRepository.findById(id).orElse(null);
         if (user == null) return null;
 
-        user.setName(updatedUser.getName());
-        user.setEmail(updatedUser.getEmail());
-        user.setPassword(updatedUser.getPassword());
-        user.setRole(updatedUser.getRole());
+        user.setName(dto.getName());
+        user.setEmail(dto.getEmail());
+        user.setPassword(dto.getPassword());
+        user.setRole(UserRole.valueOf(dto.getRole()));
 
-        return userRepository.save(user);
+        return UserMapper.toDTO(userRepository.save(user));
     }
 
-    // DELETE (FIX FOR YOUR ERROR)
+    // DELETE
     public void deleteUser(Integer id) {
         userRepository.deleteById(id);
     }
 
-    // GET SKILLS
-    public List<Skill> getUserSkills(Integer id) {
-        User user = userRepository.findById(id).orElse(null);
-        if (user == null) return null;
+    // ADD SKILL
+    public UserDTO addSkillToUser(Integer userId, Integer skillId) {
 
-        return user.getSkills();
-    }
-
-    // ADD SKILL (FIX TYPE ISSUE)
-    public User addSkillToUser(Integer userId, Integer skillId) {
         User user = userRepository.findById(userId).orElse(null);
         Skill skill = skillRepository.findById(skillId).orElse(null);
 
         if (user == null || skill == null) return null;
 
         user.getSkills().add(skill);
-        return userRepository.save(user);
+
+        return UserMapper.toDTO(userRepository.save(user));
     }
 
-    // REMOVE SKILL
-    public User removeSkillFromUser(Integer userId, Integer skillId) {
+    // REMOVE SKILL (FIXED)
+    public UserDTO removeSkillFromUser(Integer userId, Integer skillId) {
+
         User user = userRepository.findById(userId).orElse(null);
         if (user == null) return null;
 
         user.getSkills().removeIf(skill -> skill.getId() == skillId);
-        return userRepository.save(user);
+
+        return UserMapper.toDTO(userRepository.save(user));
+    }
+
+    // GET SKILLS (returns full Skill objects)
+    public List<Skill> getUserSkills(Integer id) {
+        User user = userRepository.findById(id).orElse(null);
+        if (user == null) return List.of();
+
+        return user.getSkills();
     }
 }

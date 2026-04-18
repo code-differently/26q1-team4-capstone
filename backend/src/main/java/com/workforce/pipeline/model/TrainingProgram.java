@@ -2,36 +2,29 @@ package com.workforce.pipeline.model;
 
 import jakarta.persistence.*;
 import lombok.Getter;
-import lombok.Setter;
 
 import java.util.ArrayList;
 import java.util.List;
 
-@Getter
 @Entity
 @Table(name = "training_program")
 public class TrainingProgram {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id;
+    @Getter
+    private Integer id;
 
-    // ----------------------------
-    // SETTERS
-    // ----------------------------
-    @Setter
+    @Getter
     private String name;
 
-    @Setter
+    @Getter
     private String description;
 
     // ----------------------------
-    // GET SKILLS (RETURN LIVE LIST FOR JPA)
-    // ----------------------------
-    // ----------------------------
     // MANY-TO-MANY: TrainingProgram ↔ Skill
     // ----------------------------
-    @ManyToMany(fetch = FetchType.LAZY)
+    @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
             name = "training_program_skill",
             joinColumns = @JoinColumn(name = "training_program_id"),
@@ -62,4 +55,21 @@ public class TrainingProgram {
         skills.remove(skill);
     }
 
+    // ----------------------------
+    // GET SKILLS (RETURN LIVE LIST FOR JPA)
+    // ----------------------------
+    public List<Skill> getSkills() {
+        return skills;
+    }
+
+    // ----------------------------
+    // SETTERS
+    // ----------------------------
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
 }
