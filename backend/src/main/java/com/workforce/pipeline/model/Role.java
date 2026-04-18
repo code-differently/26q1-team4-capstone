@@ -21,7 +21,7 @@ import java.util.List;
 public class Role {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id;
+    private Integer id;
     private String title;     // ADD THIS
     private String region;
     private String industry;

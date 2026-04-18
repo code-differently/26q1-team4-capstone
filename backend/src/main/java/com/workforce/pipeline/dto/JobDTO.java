@@ -1,38 +1,23 @@
 package com.workforce.pipeline.dto;
 
+import java.util.Date;
 import java.util.List;
 
-/**
- * JobDTO
- *
- * Purpose:
- * - Represents a Job in a simplified format for frontend use
- * - Converts complex relationships (like Skill entities) into simple values (Strings)
- */
 public class JobDTO {
 
     private Integer id;
     private String title;
     private String description;
-    private String industry;
-    private String region;
 
-    // Instead of List<Skill>, we use List<String> to avoid nested entity issues
+    private Date datePosted;
+    private String dataFreshness;
+
+    // flattened skills (IMPORTANT for avoiding Hibernate lazy issues)
     private List<String> skills;
 
     public JobDTO() {}
 
-    public JobDTO(Integer id, String title, String description,
-                  String industry, String region, List<String> skills) {
-        this.id = id;
-        this.title = title;
-        this.description = description;
-        this.industry = industry;
-        this.region = region;
-        this.skills = skills;
-    }
-
-    // ===== Getters & Setters =====
+    // ---------------- GETTERS / SETTERS ----------------
 
     public Integer getId() {
         return id;
@@ -58,20 +43,20 @@ public class JobDTO {
         this.description = description;
     }
 
-    public String getIndustry() {
-        return industry;
+    public Date getDatePosted() {
+        return datePosted;
     }
 
-    public void setIndustry(String industry) {
-        this.industry = industry;
+    public void setDatePosted(Date datePosted) {
+        this.datePosted = datePosted;
     }
 
-    public String getRegion() {
-        return region;
+    public String getDataFreshness() {
+        return dataFreshness;
     }
 
-    public void setRegion(String region) {
-        this.region = region;
+    public void setDataFreshness(String dataFreshness) {
+        this.dataFreshness = dataFreshness;
     }
 
     public List<String> getSkills() {

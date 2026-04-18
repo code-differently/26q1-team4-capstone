@@ -1,32 +1,27 @@
 package com.workforce.pipeline.dto;
 
-/**
- * UserDTO
- *
- * Purpose:
- * - Represents a safe version of the User entity for API responses
- * - Prevents exposing sensitive data (like password)
- * - Avoids lazy loading issues (like skills collection)
- */
+import com.workforce.pipeline.model.Skill;
+
+import java.util.List;
+
 public class UserDTO {
 
     private Integer id;
     private String name;
     private String email;
+
+    // keep simple string role for API
     private String role;
 
-    // Default constructor (required for JSON serialization/deserialization)
+    // flattened skill names (IMPORTANT for avoiding Hibernate issues)
+    private List<Skill> skills;
+
+    // optional for creation only (NOT returned in responses ideally)
+    private String password;
+
     public UserDTO() {}
 
-    // Constructor for easy mapping from Entity → DTO
-    public UserDTO(Integer id, String name, String email, String role) {
-        this.id = id;
-        this.name = name;
-        this.email = email;
-        this.role = role;
-    }
-
-    // ===== Getters & Setters =====
+    // ---------------- GETTERS / SETTERS ----------------
 
     public Integer getId() {
         return id;
@@ -58,5 +53,21 @@ public class UserDTO {
 
     public void setRole(String role) {
         this.role = role;
+    }
+
+    public List<Skill> getSkills() {
+        return skills;
+    }
+
+    public void setSkills(List<Skill> skills) {
+        this.skills = skills;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
     }
 }

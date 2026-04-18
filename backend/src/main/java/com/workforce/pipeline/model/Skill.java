@@ -15,7 +15,7 @@ public class Skill {
     @Getter
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id;
+    private Integer id;
 
     @Getter
     @Column(nullable = false, unique = true)

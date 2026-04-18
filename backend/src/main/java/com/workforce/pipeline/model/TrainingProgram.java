@@ -13,7 +13,7 @@ public class TrainingProgram {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Getter
-    private int id;
+    private Integer id;
 
     @Getter
     private String name;
@@ -24,7 +24,7 @@ public class TrainingProgram {
     // ----------------------------
     // MANY-TO-MANY: TrainingProgram ↔ Skill
     // ----------------------------
-    @ManyToMany(fetch = FetchType.LAZY)
+    @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
             name = "training_program_skill",
             joinColumns = @JoinColumn(name = "training_program_id"),

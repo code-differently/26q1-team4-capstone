@@ -14,11 +14,11 @@ import java.util.stream.Collectors;
 /**
  * GapAnalysisService
  *
- * Simple workforce gap calculation service:
- * - compares job demand vs user supply
- * - measures skill mismatches
+ * Simple explainable workforce analytics engine:
+ * - compares job demand vs talent supply
+ * - measures skill mismatch severity
  *
- * No ML, no external AI — just explainable scoring.
+ * No AI/ML — fully deterministic and explainable.
  */
 @Service
 public class GapAnalysisService {
@@ -33,34 +33,29 @@ public class GapAnalysisService {
     }
 
     /**
-     * Main entry point for analytics
+     * MAIN GAP ANALYSIS METHOD
      */
     public List<GapAnalysisDTO> computeGapAnalysis() {
 
         List<Job> jobs = jobRepository.findAll();
         List<User> users = userRepository.findAll();
 
-        // Group jobs by role title (since no region/industry field exists)
         Map<String, List<Job>> jobsByRole = jobs.stream()
                 .filter(j -> j.getRole() != null)
                 .collect(Collectors.groupingBy(j -> j.getRole().getTitle()));
 
         List<GapAnalysisDTO> results = new ArrayList<>();
 
-        for (String roleTitle : jobsByRole.keySet()) {
+        for (Map.Entry<String, List<Job>> entry : jobsByRole.entrySet()) {
 
-            List<Job> roleJobs = jobsByRole.get(roleTitle);
+            String roleTitle = entry.getKey();
+            List<Job> roleJobs = entry.getValue();
 
-            // Simple matching: users with ANY skills (basic model)
-            List<User> matchingUsers = users.stream()
-                    .filter(u -> u.getSkills() != null && !u.getSkills().isEmpty())
-                    .toList();
-
-            double roleGapScore = computeRoleGap(roleJobs.size(), matchingUsers.size());
-            double skillGapScore = computeSkillGap(roleJobs, matchingUsers);
+            double roleGapScore = computeRoleGap(roleJobs.size(), users.size());
+            double skillGapScore = computeSkillGap(roleJobs, users);
 
             results.add(new GapAnalysisDTO(
-                    "ALL", // no region in model → placeholder
+                    "ALL", // no region in current model
                     roleTitle,
                     roleGapScore,
                     skillGapScore
@@ -71,7 +66,8 @@ public class GapAnalysisService {
     }
 
     /**
-     * Simple demand vs supply ratio
+     * ROLE GAP = demand vs supply ratio
+     * Higher = more shortage
      */
     private double computeRoleGap(int jobCount, int userCount) {
         if (jobCount == 0) return 0.0;
@@ -81,26 +77,28 @@ public class GapAnalysisService {
     }
 
     /**
-     * Measures missing skills across job postings
+     * SKILL GAP = % of required skills not covered by users
      */
     private double computeSkillGap(List<Job> jobs, List<User> users) {
 
         Set<String> userSkills = users.stream()
+                .filter(u -> u.getSkills() != null)
                 .flatMap(u -> u.getSkills().stream())
-                .map(Skill::getName)
+                .map(skill -> skill.getName().toLowerCase())
                 .collect(Collectors.toSet());
 
         Set<String> requiredSkills = jobs.stream()
+                .filter(j -> j.getSkillsList() != null)
                 .flatMap(j -> j.getSkillsList().stream())
-                .map(Skill::getName)
+                .map(skill -> skill.getName().toLowerCase())
                 .collect(Collectors.toSet());
 
         if (requiredSkills.isEmpty()) return 0.0;
 
-        long missing = requiredSkills.stream()
+        long missingSkills = requiredSkills.stream()
                 .filter(skill -> !userSkills.contains(skill))
                 .count();
 
-        return (double) missing / requiredSkills.size();
+        return (double) missingSkills / requiredSkills.size();
     }
 }
