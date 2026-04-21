@@ -101,7 +101,8 @@ class JobServiceTest {
 
         boolean deleted = jobService.deleteJob(10);
 
-        assertTrue(!deleted);
+        assertEquals(false, deleted);
+
         verify(jobRepository, never()).deleteById(10);
     }
 }
