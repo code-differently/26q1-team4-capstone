@@ -1,108 +1,104 @@
 package com.workforce.pipeline.controller;
 
-import com.workforce.pipeline.service.RecommendationService;
-import com.workforce.pipeline.repository.UserRepository;
-import com.workforce.pipeline.repository.JobRepository;
-import com.workforce.pipeline.model.User;
 import com.workforce.pipeline.model.Job;
-
+import com.workforce.pipeline.model.Recommendation;
+import com.workforce.pipeline.model.SkillProfile;
+import com.workforce.pipeline.model.User;
+import com.workforce.pipeline.repository.JobRepository;
+import com.workforce.pipeline.repository.RecommendationRepository;
+import com.workforce.pipeline.repository.SkillProfileRepository;
+import com.workforce.pipeline.repository.UserRepository;
+import com.workforce.pipeline.service.RecommendationService;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/recommendations")
-@CrossOrigin
 public class RecommendationController {
 
-    private final RecommendationService aiService;
+    private final RecommendationService recommendationService;
+    private final RecommendationRepository recommendationRepository;
     private final UserRepository userRepository;
     private final JobRepository jobRepository;
+    private final SkillProfileRepository skillProfileRepository;
 
-    public RecommendationController(RecommendationService aiService,
-                                    UserRepository userRepository,
-                                    JobRepository jobRepository) {
-        this.aiService = aiService;
+    public RecommendationController(
+            RecommendationService recommendationService,
+            RecommendationRepository recommendationRepository,
+            UserRepository userRepository,
+            JobRepository jobRepository,
+            SkillProfileRepository skillProfileRepository
+    ) {
+        this.recommendationService = recommendationService;
+        this.recommendationRepository = recommendationRepository;
         this.userRepository = userRepository;
         this.jobRepository = jobRepository;
+        this.skillProfileRepository = skillProfileRepository;
     }
 
-    @PostMapping("/generate")
-    public Map<String, Object> generate(@RequestBody Map<String, Object> request) {
+    // POST /api/recommendations
+    // Body: { userId, skillProfileId, jobPostingIds[] }
+    @PostMapping
+    public ResponseEntity<?> generate(@RequestBody Map<String, Object> body) {
+        Integer userId = parseId(body.get("userId"));
+        Integer skillProfileId = parseId(body.get("skillProfileId"));
 
-        // =========================
-        // SAFE REQUEST PARSING
-        // =========================
-        Integer userId;
-        try {
-            userId = request.get("userId") == null
-                    ? null
-                    : Integer.parseInt(request.get("userId").toString());
-        } catch (Exception e) {
-            throw new RuntimeException("Invalid userId format");
-        }
+        List<?> rawIds = (List<?>) body.get("jobPostingIds");
 
-        List<?> rawJobIds = (List<?>) request.get("jobIds");
+        if (userId == null) return ResponseEntity.badRequest().body(Map.of("error", "userId is required"));
+        if (rawIds == null || rawIds.isEmpty()) return ResponseEntity.badRequest().body(Map.of("error", "jobPostingIds is required"));
 
-        if (userId == null) {
-            throw new RuntimeException("userId cannot be null");
-        }
+        List<Integer> jobIds = rawIds.stream().map(id -> Integer.parseInt(id.toString())).toList();
 
-        if (rawJobIds == null || rawJobIds.isEmpty()) {
-            throw new RuntimeException("jobIds cannot be null or empty");
-        }
-
-        List<Integer> jobIds = rawJobIds.stream()
-                .map(id -> Integer.parseInt(id.toString()))
-                .toList();
-
-        // =========================
-        // DATABASE FETCH
-        // =========================
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found: " + userId));
+        User user = userRepository.findById(userId).orElse(null);
+        if (user == null) return ResponseEntity.badRequest().body(Map.of("error", "User not found: " + userId));
 
         List<Job> jobs = jobRepository.findAllWithSkills(jobIds);
+        if (jobs.isEmpty()) return ResponseEntity.badRequest().body(Map.of("error", "No valid jobs found for provided IDs"));
 
-        if (jobs.isEmpty()) {
-            return Map.of(
-                    "error", "No valid jobs found",
-                    "jobIds", jobIds
-            );
+        SkillProfile profile = null;
+        if (skillProfileId != null) {
+            profile = skillProfileRepository.findById(skillProfileId).orElse(null);
+        }
+        if (profile == null) {
+            profile = skillProfileRepository.findByUserId(userId).orElse(null);
         }
 
-        // =========================
-        // SKILL EXTRACTION
-        // =========================
-        List<String> userSkills = user.getSkills()
-                .stream()
-                .map(skill -> skill.getName())
-                .collect(Collectors.toList());
-
-        List<String> jobSkills = jobs.stream()
-                .flatMap(job -> job.getSkillsList().stream())
-                .map(skill -> skill.getName())
+        // Build search query from job titles
+        String searchQuery = jobs.stream()
+                .map(j -> j.getTitle() != null ? j.getTitle() : "")
+                .filter(t -> !t.isEmpty())
                 .distinct()
-                .collect(Collectors.toList());
+                .limit(3)
+                .reduce((a, b) -> a + ", " + b)
+                .orElse("Job Search");
 
-        String primaryJobTitle = jobs.get(0).getTitle();
+        String aiResponse = recommendationService.generateRecommendation(user, profile, jobs);
 
-        // =========================
-        // AI CALL
-        // =========================
-        Map<String, Object> response = aiService.generateRecommendations(
-                userSkills,
-                jobSkills,
-                primaryJobTitle
-        );
+        Recommendation rec = new Recommendation();
+        rec.setUserId(userId);
+        rec.setSearchQuery(searchQuery);
+        rec.setAiResponse(aiResponse);
+        rec.setCreatedAt(new Date());
 
-        // =========================
-        // SAFE RESPONSE WRAP
-        // =========================
-        response.put("userId", userId);
-        response.put("jobCount", jobs.size());
+        Recommendation saved = recommendationRepository.save(rec);
+        return ResponseEntity.ok(saved);
+    }
 
-        return response;
+    // GET /api/recommendations/history/{userId}
+    @GetMapping("/history/{userId}")
+    public ResponseEntity<List<Recommendation>> history(@PathVariable Integer userId) {
+        return ResponseEntity.ok(recommendationRepository.findByUserIdOrderByCreatedAtDesc(userId));
+    }
+
+    private Integer parseId(Object val) {
+        if (val == null) return null;
+        try {
+            return Integer.parseInt(val.toString());
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 }

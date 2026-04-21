@@ -41,7 +41,7 @@ public class Skill {
     public Skill() {
     }
 
-    // Keep storage normalized so duplicate checks are reliable.
+    // Normalize to lowercase for consistent storage and duplicate prevention
     public void setName(String name) {
         this.name = name.trim().toLowerCase();
     }

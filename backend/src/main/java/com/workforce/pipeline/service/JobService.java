@@ -1,8 +1,10 @@
 package com.workforce.pipeline.service;
 
 import com.workforce.pipeline.model.Job;
+import com.workforce.pipeline.model.Role;
 import com.workforce.pipeline.model.Skill;
 import com.workforce.pipeline.repository.JobRepository;
+import com.workforce.pipeline.repository.RoleRepository;
 import com.workforce.pipeline.repository.SkillRepository;
 import org.springframework.stereotype.Service;
 
@@ -13,69 +15,54 @@ public class JobService {
 
     private final JobRepository jobRepository;
     private final SkillRepository skillRepository;
+    private final RoleRepository roleRepository;
 
-    public JobService(JobRepository jobRepository, SkillRepository skillRepository) {
+    public JobService(JobRepository jobRepository, SkillRepository skillRepository, RoleRepository roleRepository) {
         this.jobRepository = jobRepository;
         this.skillRepository = skillRepository;
+        this.roleRepository = roleRepository;
     }
 
     // =========================
-    // ADZUNA IMPORT (FINAL FIX)
+    // ADZUNA IMPORT
+    // Maps all fields from AdzunaService parsed data to Job entity
     // =========================
-
-    public List<Job> importFromAdzuna(List<Map<String, Object>> jobs) {
-
+    public List<Job> importFromAdzuna(List<Map<String, Object>> adzunaJobs) {
         List<Job> savedJobs = new ArrayList<>();
 
-        System.out.println("🔥 IMPORT START - incoming jobs: " + jobs.size());
-
-        for (Map<String, Object> j : jobs) {
-
+        for (Map<String, Object> j : adzunaJobs) {
             try {
-                String title = (String) j.getOrDefault("title", "Untitled");
-                String description = (String) j.getOrDefault("description", "");
-                String company = (String) j.getOrDefault("company", "Unknown");
-                String location = (String) j.getOrDefault("location", "Unknown");
-
-                // ✅ USE ADZUNA UNIQUE ID
                 String jobKey = String.valueOf(j.get("id"));
+                if (jobKey == null || jobKey.equals("null") || jobKey.isEmpty()) continue;
 
-                System.out.println("➡ Processing jobKey: " + jobKey);
-                System.out.println("   Title: " + title);
-                System.out.println("   Company: " + company);
-                System.out.println("   Location: " + location);
-
-                // ✅ DUPLICATE CHECK
-                boolean exists = jobRepository.findByJobKey(jobKey).isPresent();
-                System.out.println("🔍 Exists? " + exists);
-
-                if (exists) continue;
+                // Skip duplicates
+                if (jobRepository.findByJobKey(jobKey).isPresent()) continue;
 
                 Job job = new Job();
-                job.setTitle(title);
-                job.setDescription(description);
                 job.setJobKey(jobKey);
-                job.setDataFreshness("FRESH");
+                job.setTitle((String) j.getOrDefault("title", "Untitled"));
+                job.setDescription((String) j.getOrDefault("description", ""));
+                job.setCompany((String) j.getOrDefault("company", "Unknown Company"));
+                job.setLocation((String) j.getOrDefault("location", "Unknown Location"));
+                job.setSalaryRange((String) j.getOrDefault("salaryRange", ""));
+                job.setFetchedAt((String) j.getOrDefault("fetchedAt", ""));
+                job.setRequiredSkills((String) j.getOrDefault("requiredSkills", ""));
                 job.setDatePosted(new Date());
+                job.setDataFreshness("FRESH");
 
-                Job saved = jobRepository.save(job);
-                savedJobs.add(saved);
-
-                System.out.println("✅ SAVED job id: " + saved.getId());
+                savedJobs.add(jobRepository.save(job));
 
             } catch (Exception e) {
-                System.err.println("❌ Failed to import job");
-                e.printStackTrace();
+                System.err.println("❌ Failed to import job: " + e.getMessage());
             }
         }
 
-        System.out.println("🏁 IMPORT COMPLETE - saved: " + savedJobs.size());
-
+        System.out.println("✅ Imported " + savedJobs.size() + " new jobs from Adzuna");
         return savedJobs;
     }
 
     // =========================
-    // BASIC CRUD (UNCHANGED)
+    // BASIC CRUD
     // =========================
 
     public Job createJob(Job job) {
@@ -89,12 +76,13 @@ public class JobService {
     }
 
     public Job getJobById(Integer id) {
-        return jobRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Job not found: " + id));
+        return jobRepository.findById(id).orElse(null);
     }
 
     public Job updateJob(Integer id, Job updated) {
-        Job job = getJobById(id);
+        Optional<Job> existing = jobRepository.findById(id);
+        if (existing.isEmpty()) return null;
+        Job job = existing.get();
         job.setTitle(updated.getTitle());
         job.setDescription(updated.getDescription());
         return jobRepository.save(job);
@@ -112,20 +100,32 @@ public class JobService {
 
     public Job addSkillToJob(Integer jobId, Integer skillId) {
         Job job = getJobById(jobId);
-        Skill skill = skillRepository.findById(skillId)
-                .orElseThrow(() -> new RuntimeException("Skill not found"));
+        if (job == null) throw new RuntimeException("Job not found: " + jobId);
 
-        job.getSkillsList().add(skill);
+        Skill skill = skillRepository.findById(skillId)
+                .orElseThrow(() -> new RuntimeException("Skill not found: " + skillId));
+
+        boolean alreadyHas = job.getSkillsList().stream()
+                .anyMatch(s -> s.getId().equals(skillId));
+        if (!alreadyHas) {
+            job.getSkillsList().add(skill);
+        }
         return jobRepository.save(job);
     }
 
     public Job removeSkillFromJob(Integer jobId, Integer skillId) {
         Job job = getJobById(jobId);
+        if (job == null) throw new RuntimeException("Job not found: " + jobId);
         job.getSkillsList().removeIf(s -> s.getId().equals(skillId));
         return jobRepository.save(job);
     }
 
     public Job assignRoleToJob(Integer jobId, Integer roleId) {
-        return jobRepository.save(getJobById(jobId));
+        Job job = getJobById(jobId);
+        if (job == null) throw new RuntimeException("Job not found: " + jobId);
+        Role role = roleRepository.findById(roleId)
+                .orElseThrow(() -> new RuntimeException("Role not found: " + roleId));
+        job.setRole(role);
+        return jobRepository.save(job);
     }
 }
