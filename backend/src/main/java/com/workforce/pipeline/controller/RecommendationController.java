@@ -66,7 +66,10 @@ public class RecommendationController {
         List<Job> jobs = jobRepository.findAllWithSkills(jobIds);
 
         if (jobs.isEmpty()) {
-            throw new RuntimeException("No jobs found for provided IDs");
+            return Map.of(
+                    "error", "No valid jobs found",
+                    "jobIds", jobIds
+            );
         }
 
         // =========================
